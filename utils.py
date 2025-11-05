@@ -19,10 +19,12 @@ def fixRandomSeed(seed: int = Config.SEED):
         torch.backends.cudnn.deterministic = True
 
 
-def configureFileLogging(filepath: str):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+def configureFileLogging(filename: str):
+    path = os.path.join(Config.BASE_DIR, "logs", filename)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
     logging.basicConfig(
-        filename=filepath,
+        filename=path,
         filemode="a",
         format="[%(asctime)s][%(levelname)s] %(message)s",
         level=logging.INFO,

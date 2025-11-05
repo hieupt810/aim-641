@@ -6,13 +6,13 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.models import ResNet34_Weights, resnet34
+from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
 
-from config import Config, PretrainedConfig
+from config import Config, TransferLearningConfig
 from utils import calculateNormalizeParameters, configureFileLogging, fixRandomSeed
 
 fixRandomSeed()
-configureFileLogging("pretrained_resnet34_training.log")
+configureFileLogging("pretrained_efficientnet_training.log")
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ dataset = ImageFolder(root=Config.DATA_DIR, transform=transform)
 logger.info("Loaded dataset with %d samples.", len(dataset))
 
 # Split dataset into training and testing sets
-test_size = int(len(dataset) * PretrainedConfig.TEST_RATIO)
+test_size = int(len(dataset) * TransferLearningConfig.TEST_RATIO)
 train_size = len(dataset) - test_size
 train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 logger.info("Training samples: %d, Testing samples: %d", train_size, test_size)
@@ -41,8 +41,8 @@ train_loader = DataLoader(train_dataset, batch_size=Config.BATCH_SIZE, shuffle=T
 test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=False)
 
 # Model, optimizer, and loss function
-model = resnet34(weights=ResNet34_Weights.DEFAULT).to(Config.DEVICE)
-optimizer = Adam(model.parameters(), lr=PretrainedConfig.LEARNING_RATE)
+model = efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT).to(Config.DEVICE)
+optimizer = Adam(model.parameters(), lr=TransferLearningConfig.LEARNING_RATE)
 criterion = CrossEntropyLoss()
 
 # Training and testing loop
@@ -50,7 +50,7 @@ train_losses, test_losses = [], []
 train_accuracies, test_accuracies = [], []
 best_accuracy = 0.0
 
-for epoch in range(1, PretrainedConfig.NUM_EPOCHS):
+for epoch in range(1, TransferLearningConfig.NUM_EPOCHS):
     for phase in ["train", "test"]:
         if phase == "train":
             model.train()
@@ -86,7 +86,9 @@ for epoch in range(1, PretrainedConfig.NUM_EPOCHS):
             test_accuracies.append(epoch_accuracy.item())
             if epoch_accuracy > best_accuracy:
                 best_accuracy = epoch_accuracy
-                torch.save(model.state_dict(), f"pretrained_resnet34_epoch_{epoch}.pth")
+                torch.save(
+                    model.state_dict(), f"pretrained_efficientnet_epoch_{epoch}.pth"
+                )
 
         logger.info(
             "Epoch %d [%s] - Loss: %.4f, Accuracy: %.4f",
