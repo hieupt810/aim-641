@@ -8,7 +8,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
+from torchvision.models import ResNet18_Weights, resnet18
 
 
 @dataclass
@@ -28,30 +28,6 @@ def fixRandomSeed(seed: int = Config.SEED):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
-
-
-def calculateNormalizeParameters(
-    data_dir=Config.DATA_DIR, image_size=Config.IMAGE_SIZE, batch_size=Config.BATCH_SIZE
-):
-    transform = transforms.Compose(
-        [transforms.Resize((image_size, image_size)), transforms.ToTensor()]
-    )
-    dataset = ImageFolder(root=data_dir, transform=transform)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
-    # Initialize parameters
-    mean, std = 0.0, 0.0
-    total_images = 0
-    for images, _ in loader:
-        samples = images.size(0)
-        images = images.view(samples, images.size(1), -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
-        total_images += samples
-
-    mean /= total_images
-    std /= total_images
-    return mean, std
 
 
 def plot_metrics(
@@ -87,7 +63,8 @@ def plot_metrics(
 
 
 fixRandomSeed()
-mean, std = calculateNormalizeParameters()
+mean = torch.tensor([0.2006, 0.1854, 0.2579])
+std = torch.tensor([0.1391, 0.1799, 0.1537])
 
 # Data transformations
 transform = transforms.Compose(
@@ -108,7 +85,7 @@ train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 train_loader = DataLoader(train_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=False)
 
-model = efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT).to(Config.DEVICE)
+model = resnet18(weights=ResNet18_Weights.DEFAULT).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
 
@@ -153,7 +130,7 @@ for epoch in range(1, Config.NUM_EPOCHS + 1):
             test_accuracies.append(epoch_accuracy.item())
             if epoch_accuracy > best_accuracy:
                 best_accuracy = epoch_accuracy
-                torch.save(model.state_dict(), f"best_efficientnet_{epoch}.pth")
+                torch.save(model.state_dict(), f"best_resnet18_{epoch}.pth")
 
     print(
         f"Epoch {epoch}/{Config.NUM_EPOCHS} - "
