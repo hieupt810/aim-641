@@ -56,3 +56,106 @@ def plot_metrics(
 
     plt.tight_layout()
     plt.show()
+
+
+def load_model(model_class, model_path: str, device):
+    import torch
+
+    model = model_class()
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.to(device)
+    model.eval()
+    return model
+
+
+def plot_confusion_matrix(model, test_loader, class_names, device):
+    import seaborn as sns
+    import torch
+    from matplotlib import pyplot as plt
+    from sklearn.metrics import confusion_matrix
+
+    all_preds = []
+    all_labels = []
+    model.eval()
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.numpy())
+
+    cm = confusion_matrix(all_labels, all_preds)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues",
+        xticklabels=class_names,
+        yticklabels=class_names,
+    )
+    plt.ylabel("Actual")
+    plt.xlabel("Predicted")
+    plt.title("Confusion Matrix")
+    plt.show()
+
+
+def lime_interpretation(model, test_dataset, image_size, mean, std):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import torch
+    import torch.nn.functional as F
+    from lime import lime_image
+    from PIL import Image
+    from skimage.segmentation import mark_boundaries
+    from torchvision import transforms
+
+    def batch_predict(images):
+        transform = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Resize((image_size, image_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean, std),
+            ]
+        )
+
+        model.eval()
+        batch = torch.stack(tuple(transform(i) for i in images), dim=0)
+        batch = batch.to(next(model.parameters()).device)
+
+        logits = model(batch)
+        probs = F.softmax(logits, dim=1)
+        return probs.detach().cpu().numpy()
+
+    pil_transform = transforms.Compose([transforms.Resize((image_size, image_size))])
+    explainer = lime_image.LimeImageExplainer()
+
+    num_samples = len(test_dataset)
+    indices = np.random.choice(num_samples, 5, replace=False)
+    _, axes = plt.subplots(1, 5, figsize=(20, 4))
+
+    for i, idx in enumerate(indices):
+        img_path, _ = test_dataset.dataset.samples[test_dataset.indices[idx]]
+        original_image = Image.open(img_path).convert("RGB")
+        pil_image = pil_transform(original_image)
+        explanation = explainer.explain_instance(
+            np.array(pil_image),
+            batch_predict,
+            top_labels=5,
+            hide_color=0,
+            num_samples=1000,
+        )
+        temp, mask = explanation.get_image_and_mask(
+            explanation.top_labels[0],
+            positive_only=False,
+            num_features=5,
+            hide_rest=False,
+        )
+        img_boundry = mark_boundaries(temp / 255.0, mask)
+        axes[i].imshow(img_boundry)
+        axes[i].axis("off")
+
+    plt.tight_layout()
+    plt.show()

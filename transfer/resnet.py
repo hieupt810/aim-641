@@ -7,19 +7,22 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.models import ResNet101_Weights, resnet101
+from torchvision.models import ResNet18_Weights, resnet18
 
 
 @dataclass
 class Config:
     SEED = 42
-    BATCH_SIZE = 32
-    NUM_EPOCHS = 10
+    BATCH_SIZE = 64
+    NUM_EPOCHS = 30
     IMAGE_SIZE = 224
     TEST_RATIO = 0.3
-    MODEL_NAME = "resnet101"
+    MODEL_NAME = "resnet18"
     DATA_DIR = "/kaggle/input/brain-tumor-dataset"
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+print(f"Using device: {Config.DEVICE}")
 
 
 def fixRandomSeed(seed: int = Config.SEED):
@@ -53,9 +56,16 @@ train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 train_loader = DataLoader(train_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=False)
 
-model = resnet101(weights=ResNet101_Weights.DEFAULT).to(Config.DEVICE)
+model = resnet18(weights=ResNet18_Weights.DEFAULT).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
+
+# Freeze all layers except the final layer
+for param in model.parameters():
+    param.requires_grad = False
+
+for param in model.fc.parameters():
+    param.requires_grad = True
 
 # Training and testing loop
 train_losses, test_losses = [], []
