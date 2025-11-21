@@ -13,8 +13,8 @@ from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
 @dataclass
 class Config:
     SEED = 42
-    BATCH_SIZE = 64
-    NUM_EPOCHS = 10
+    BATCH_SIZE = 32
+    NUM_EPOCHS = 30
     IMAGE_SIZE = 224
     TEST_RATIO = 0.3
     MODEL_NAME = "efficientnet_b0"
@@ -59,13 +59,6 @@ test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=Fal
 model = efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
-
-# Freeze all layers except the classifier
-for param in model.parameters():
-    param.requires_grad = False
-
-for param in model.classifier.parameters():
-    param.requires_grad = True
 
 # Training and testing loop
 train_losses, test_losses = [], []

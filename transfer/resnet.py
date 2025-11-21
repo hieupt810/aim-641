@@ -13,7 +13,7 @@ from torchvision.models import ResNet18_Weights, resnet18
 @dataclass
 class Config:
     SEED = 42
-    BATCH_SIZE = 64
+    BATCH_SIZE = 32
     NUM_EPOCHS = 30
     IMAGE_SIZE = 224
     TEST_RATIO = 0.3
@@ -59,13 +59,6 @@ test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=Fal
 model = resnet18(weights=ResNet18_Weights.DEFAULT).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
-
-# Freeze all layers except the final layer
-for param in model.parameters():
-    param.requires_grad = False
-
-for param in model.fc.parameters():
-    param.requires_grad = True
 
 # Training and testing loop
 train_losses, test_losses = [], []

@@ -4,7 +4,6 @@ import numpy as np
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.optim import Adam
-from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
@@ -14,8 +13,8 @@ from torchvision.models import efficientnet_b0
 @dataclass
 class Config:
     SEED = 42
-    BATCH_SIZE = 64
-    NUM_EPOCHS = 100
+    BATCH_SIZE = 32
+    NUM_EPOCHS = 50
     IMAGE_SIZE = 224
     TEST_RATIO = 0.3
     MODEL_NAME = "efficientnet_b0"
@@ -60,7 +59,6 @@ test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=Fal
 model = efficientnet_b0(weights=None).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
-scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
 
 # Training and testing loop
 train_losses, test_losses = [], []
@@ -105,7 +103,6 @@ for epoch in range(1, Config.NUM_EPOCHS + 1):
                 best_accuracy = epoch_accuracy
                 torch.save(model.state_dict(), f"best_{Config.MODEL_NAME}_{epoch}.pth")
 
-    scheduler.step()
     print(
         f"Epoch {epoch}/{Config.NUM_EPOCHS} - "
         f"Train Loss: {train_losses[-1]:.4f}, Train Acc: {train_accuracies[-1]:.4f} - "
