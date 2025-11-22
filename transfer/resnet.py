@@ -7,7 +7,7 @@ from torch.optim import Adam
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torchvision.models import ResNet18_Weights, resnet18
+from torchvision.models import ResNet50_Weights, resnet50
 
 
 @dataclass
@@ -17,7 +17,7 @@ class Config:
     NUM_EPOCHS = 30
     IMAGE_SIZE = 224
     TEST_RATIO = 0.3
-    MODEL_NAME = "resnet18"
+    MODEL_NAME = "resnet50"
     DATA_DIR = "/kaggle/input/brain-tumor-dataset"
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -56,7 +56,7 @@ train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 train_loader = DataLoader(train_dataset, batch_size=Config.BATCH_SIZE, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=Config.BATCH_SIZE, shuffle=False)
 
-model = resnet18(weights=ResNet18_Weights.DEFAULT).to(Config.DEVICE)
+model = resnet50(weights=ResNet50_Weights.DEFAULT).to(Config.DEVICE)
 optimizer = Adam(model.parameters(), lr=0.001)
 criterion = CrossEntropyLoss()
 

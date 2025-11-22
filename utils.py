@@ -69,6 +69,7 @@ def load_model(model_class, model_path: str, device):
 
 
 def plot_confusion_matrix(model, test_loader, class_names, device):
+    "Usage: plot_confusion_matrix(model, test_loader, dataset.classes, Config.DEVICE)"
     import seaborn as sns
     import torch
     from matplotlib import pyplot as plt
@@ -102,6 +103,7 @@ def plot_confusion_matrix(model, test_loader, class_names, device):
 
 
 def lime_interpretation(model, test_dataset, image_size, mean, std):
+    "Usage: lime_interpretation(model, test_dataset, Config.IMAGE_SIZE, mean, std)"
     import matplotlib.pyplot as plt
     import numpy as np
     import torch
