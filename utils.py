@@ -24,6 +24,65 @@ def calculateNormalizeParameters(data_dir: str, image_size: int, batch_size: int
     return mean, std
 
 
+def plot_data_distribution(data_dir: str, batch_size: int, image_size: int):
+    import matplotlib.pyplot as plt
+    from torch.utils.data import DataLoader
+    from torchvision import transforms
+    from torchvision.datasets import ImageFolder
+
+    transform = transforms.Compose(
+        [
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+        ]
+    )
+    dataset = ImageFolder(root=data_dir, transform=transform)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    # Plotting the data distribution
+    class_counts = [0] * len(dataset.classes)
+    for _, labels in loader:
+        for label in labels:
+            class_counts[label] += 1
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(dataset.classes, class_counts)
+    plt.xlabel("Classes")
+    plt.ylabel("Number of Images")
+    plt.xticks(rotation=45)
+    plt.show()
+
+
+def plot_class_samples(
+    data_dir: str, class_name: str, image_size: int, num_samples: int = 5
+):
+    import matplotlib.pyplot as plt
+    from torchvision import transforms
+    from torchvision.datasets import ImageFolder
+
+    transform = transforms.Compose(
+        [
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+        ]
+    )
+    dataset = ImageFolder(root=data_dir, transform=transform)
+
+    class_index = dataset.class_to_idx[class_name]
+    class_samples = [img for img, label in dataset if label == class_index][
+        :num_samples
+    ]
+    plt.figure(figsize=(15, 5))
+    for i, img in enumerate(class_samples):
+        img = img.permute(1, 2, 0).numpy()
+        plt.subplot(1, num_samples, i + 1)
+        plt.imshow(img)
+        plt.axis("off")
+        plt.title(f"{class_name.replace('_', ' ').capitalize()} - Sample {i + 1}")
+
+    plt.show()
+
+
 def plot_metrics(
     train_accuracies, test_accuracies, train_losses, test_losses, choose_epoch
 ):
